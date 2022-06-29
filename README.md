@@ -5,6 +5,10 @@ List of Gas Savings that you should apply without thinking too much, with math
 
 Saves 5 gas
 
+## unchecked ++i / i++
+
+Saves 80 gas on average
+
 
 ## `immutable` If you have a constructor and you set a variable once
 
