@@ -19,3 +19,9 @@ Saves 2100 per first SLOAD, 100 for each subsequent SLOAD
 
 The first read will cost an extra 6 gas (MSTORE + MLOAD)
 Saves 97 gas (3 is MLOAD) for each subsequent read
+
+
+# Mythbusting
+
+## Require(x != 0) no longer works if solidity >= 0.8.12
+https://gist.github.com/IllIllI000/bf2c3120f24a69e489f12b3213c06c94
