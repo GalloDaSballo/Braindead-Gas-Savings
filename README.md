@@ -25,3 +25,11 @@ Saves 97 gas (3 is MLOAD) for each subsequent read
 
 ## Require(x != 0) no longer works if solidity >= 0.8.12
 https://gist.github.com/IllIllI000/bf2c3120f24a69e489f12b3213c06c94
+
+## Immutable and Constant have different costs for "expressions" - BUSTED
+https://twitter.com/GalloDaSballo/status/1543729080926871557
+They cost the same at runtime
+
+## >= is cheaper than > - BUSTED
+https://twitter.com/GalloDaSballo/status/1543729467465629696
+`>` is cheaper (less opcodes)
