@@ -26,7 +26,8 @@ Saves 97 gas (3 is MLOAD) for each subsequent read
 
 This only works in certain cases, either low optimizations or outside an unchecked block, also dependent on solidity version, always test it
 
-## Use Calldata instead of Memory
+## Use Calldata instead of Memory
+
 Generally will save gas as Memory is copied from the calldata into memory, vs calldata being read directly.
 
 ```solidity
@@ -68,6 +69,7 @@ contract GasSample {
 ```
 
 ### With Calldata
+```bash
 │ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ getData                                   ┆ 999             ┆ 999 ┆ 999    ┆ 999 ┆ 1       │
@@ -77,7 +79,7 @@ contract GasSample {
 │ Function Name                             ┆ min             ┆ avg  ┆ median ┆ max  ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ getData                                   ┆ 1364            ┆ 1364 ┆ 1364   ┆ 1364 ┆ 1    
-
+```
 
 # Mythbusting
 
@@ -91,3 +93,55 @@ They cost the same at runtime
 ## >= is cheaper than > - BUSTED
 https://twitter.com/GalloDaSballo/status/1543729467465629696
 `>` is cheaper (less opcodes)
+
+## Keccak("string") is re-computed at run-time
+
+The compiler is purposefully set up to optimize these:
+https://github.com/ethereum/solidity/issues/4024
+
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity >=0.8.14;
+
+import "../../lib/test.sol";
+import "../../lib/Console.sol";
+
+contract GasTest is DSTest {
+    Contract0 c0;
+
+    function setUp() public {
+        c0 = new Contract0();
+    }
+
+    function testGas() public {
+        uint256 value = c0.getData();
+        assertTrue(value > 0);
+    }
+}
+
+
+contract Contract0 {
+    mapping(bytes32 => uint256) internal uintStorage;
+
+    constructor () {
+        uintStorage[keccak256("NOPClaim.RewardsCycleTotal")] = block.timestamp;
+    }
+
+    function getUint(bytes32 key) internal returns (uint256){
+        return uintStorage[key];
+    }
+    function getData() external returns (uint256) {
+        return getUint(keccak256("NOPClaim.RewardsCycleTotal"));
+    }
+}
+```
+
+```bash
+| src/test/GasTest.t.sol:Contract0 contract |                 |      |        |      |         |
+|-------------------------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost                           | Deployment Size |      |        |      |         |
+| 60613                                     | 298             |      |        |      |         |
+| Function Name                             | min             | avg  | median | max  | # calls |
+| getData                                   | 2267            | 2267 | 2267   | 2267 | 1       |
+```
+
